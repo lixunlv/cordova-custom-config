@@ -767,6 +767,21 @@ var applyCustomConfig = (function(){
         });
     }
 
+
+    function updateShareExtensionConfig(identifier) {
+        var buildConfig = this.pbxXCBuildConfigurationSection();
+        for(var blockName in buildConfig){
+            var block = buildConfig[blockName];
+
+            if(typeof(block) !== "object" || !(block["buildSettings"])) continue;
+
+            var settings = block["buildSettings"];
+            if (settings['INFOPLIST_FILE'] == '"ShareExtension/ShareExtension-Info.plist"') {
+                settings['PRODUCT_BUNDLE_IDENTIFIER'] = identifier;
+            }
+        }
+    }
+
     /**
      * Updates the project.pbxproj file with data from config.xml
      * @param {String} xcodeProjectPath - path to XCode project file
@@ -775,6 +790,7 @@ var applyCustomConfig = (function(){
     function updateIosPbxProj(xcodeProjectPath, configItems) {
         var xcodeProject = xcode.project(xcodeProjectPath);
         xcodeProject.parse(function(err){
+            xcodeProject.updateShareExtensionConfig = updateShareExtensionConfig;
             if(err){
                 // shell is undefined if android platform has been removed and added with a new package id but ios stayed the same.
                 var msg = 'An error occurred during parsing of [' + xcodeProjectPath + ']: ' + JSON.stringify(err);
@@ -1056,7 +1072,10 @@ var applyCustomConfig = (function(){
                     var targetDirPath = path.join(platformPath, projectName, "Images.xcassets", targetName+".imageset");
                     deployAssetCatalog(targetName, targetDirPath, configItems);
                 }
-
+                else {
+                    targetFilePath = path.join(platformPath, targetName);
+                    updateIosPlist(targetFilePath, configItems);
+                }
             } else if (platform === 'android' && targetName === 'AndroidManifest.xml') {
                 targetFilePath = androidManifestFilePath;
                 ensureBackup(targetFilePath, platform, targetName);
