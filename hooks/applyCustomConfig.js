@@ -768,7 +768,7 @@ var applyCustomConfig = (function(){
     }
 
 
-    function updateShareExtensionConfig(identifier) {
+    function updateShareExtensionConfig(identifier, target, device) {
         var buildConfig = this.pbxXCBuildConfigurationSection();
         for(var blockName in buildConfig){
             var block = buildConfig[blockName];
@@ -778,6 +778,8 @@ var applyCustomConfig = (function(){
             var settings = block["buildSettings"];
             if (settings['INFOPLIST_FILE'] == '"ShareExtension/ShareExtension-Info.plist"') {
                 settings['PRODUCT_BUNDLE_IDENTIFIER'] = identifier;
+                settings['IPHONEOS_DEPLOYMENT_TARGET'] = target;
+                settings['TARGETED_DEVICE_FAMILY'] = '"' + device + '"';
             }
         }
     }
@@ -1044,7 +1046,10 @@ var applyCustomConfig = (function(){
         _.each(configData, function (configItems, targetName) {
             var targetFilePath;
             if (platform === 'ios') {
-                if (targetName.indexOf("Info.plist") > -1) {
+                if (targetName.indexOf("ShareExtension-Info.plist") > -1) {
+                    targetFilePath = path.join(platformPath, targetName);
+                    updateIosPlist(targetFilePath, configItems);
+                }else if (targetName.indexOf("Info.plist") > -1) {
                     targetName =  projectName + '-Info.plist';
                     targetFilePath = path.join(platformPath, projectName, targetName);
                     ensureBackup(targetFilePath, platform, targetName);
